@@ -1,0 +1,125 @@
+ drop sequence MOVIE_ID;
+  
+Drop table uesr_movie cascade constraints;
+Drop table username cascade constraints;
+Drop table movies cascade constraints;
+
+
+
+CREATE SEQUENCE  MOVIE_ID  MINVALUE 1 MAXVALUE 9999999999999999999999999999 INCREMENT BY 1 START WITH 1 CACHE 20 ORDER  CYCLE ;
+
+
+create table username (
+    email varchar2(50) primary key,
+  	firstName varchar2(50),
+  	lastName varchar2(50),
+  	password1 varchar2(50),
+  	birthDate DATE,
+  	gender varchar2(1),
+    phone VARCHAR2(20),
+    user_role varchar2(1),
+    cash number
+);
+create table movies(
+      movie_id number(20) primary key,
+    	movie_name varchar2(50),
+    	movie_category varchar2(50),
+      price number,
+    	poster varchar2(200),
+    	runtime number,
+    	movie_date date
+);
+
+
+create table uesr_movie(
+	email varchar2(50) references username(email),
+	movie_id number(20) references movies(movie_id),
+ 	constraint movie_pk primary key (email,movie_id)
+);
+
+
+CREATE OR REPLACE TRIGGER movie_trig 
+BEFORE INSERT ON movies
+FOR EACH ROW
+
+BEGIN
+  SELECT MOVIE_ID.NEXTVAL
+  INTO   :new.MOVIE_ID
+  FROM   dual;
+END;
+
+create or replace procedure AddMovie
+(m_name VARCHAR2,m_cat VARCHAR2,prc NUMBER,pos VARCHAR2,
+run NUMBER,m_date date)
+as
+begin
+
+insert into Movies
+(movie_name,movie_category,price,poster,runtime,movie_date)
+Values (m_name, m_cat,prc,pos, run, m_date ) ;
+
+End ;
+
+
+
+create or replace procedure DeleteMovie
+(mid NUMBER)
+as
+begin
+
+delete from UESR_MOVIE
+where movie_id = mid;
+
+delete from Movies
+where movie_id = mid;
+
+
+End ;
+
+create or replace procedure CreateMUser
+(e VARCHAR2,f VARCHAR2,l VARCHAR2,
+p VARCHAR2, b DATE, g VARCHAR2,ph VARCHAR2,ur VARCHAR2,ca NUMBER)
+as
+begin
+
+insert  into  username
+(email, firstname, lastname, password1, birthdate, gender,phone,user_role,cash)
+Values ( e, f, l, p, b, g,ph,ur,ca) ;
+
+End ;
+
+create or replace procedure VIEWUSERMOVIES
+(e VARCHAR2,rec out sys_refcursor)
+as
+begin
+
+OPEN rec for
+SELECT movies.* from  movies, uesr_movie where uesr_movie.email = e and movies.movie_id = uesr_movie.movie_id;
+
+End ;
+
+create or replace procedure AddUserMovie
+(e VARCHAR2,mid NUMBER,ca NUMBER)
+as
+begin
+
+insert into uesr_movie
+(email, movie_id)
+Values (e,mid) ;
+
+UPDATE username set cash = ca where email = e;
+
+End ;
+
+create or replace procedure CancelUserMovie
+(e VARCHAR2,mid NUMBER,ca NUMBER)
+as
+begin
+
+DELETE from uesr_movie
+where 
+email = e and movie_id = mid;
+
+UPDATE username set cash = ca where email = e;
+
+End ; 
